@@ -1,4 +1,4 @@
-const { StockItem, validate } = require("../models/StockItem");
+const { StockItem, validate } = require("../models/stockItem");
 const auth = require("../middleware/auth");
 const express = require("express");
 const router = express.Router();
