@@ -56,8 +56,8 @@ const StockItem = mongoose.model("StockItem", StockItemSchema);
 function validateStockItem(stockItem) {
   const schema = Joi.object({
     name: Joi.string().min(1).max(100).required(),
-    amount: Joi.number().min(0),
-    price: Joi.number().min(0),
+    amount: Joi.number().min(0).optional(),
+    price: Joi.number().min(0).optional(),
     customizations: Joi.array()
       .items(
         Joi.object({
@@ -66,10 +66,10 @@ function validateStockItem(stockItem) {
             .items(
               Joi.object({
                 name: Joi.string().min(1).max(100).required(),
-                additionalPrice: Joi.number().min(0),
+                additionalPrice: Joi.number().min(0).optional(),
               })
             )
-            .optional(), // Options can be empty
+            .required(), // Options can be empty
         })
       )
       .optional(), // Customizations are optional
