@@ -10,6 +10,53 @@ const express = require("express");
 const { applyFilter } = require("../utils/filters");
 const router = express.Router();
 
+
+router.get("/itemsPreperations", auth, async (req, res) => {
+  try {
+    // Fetch all orders with 'Initialized Status' (assuming orderStatusId === 1 means Initialized)
+    const initializedOrders = await Order.find({ orderStatusId: OrderStatusEnum.INITIALIZED }).select("items");
+
+    // Calculate required quantity for each stock item across all orders
+    const itemQuantityMap = new Map(); // To keep track of total quantity required per stock item
+
+    initializedOrders.forEach(order => {
+      order.items.forEach(item => {
+        const { stockItemId, amount } = item;
+
+        // Add the amount for this stockItemId
+        if (itemQuantityMap.has(stockItemId)) {
+          itemQuantityMap.set(stockItemId, itemQuantityMap.get(stockItemId) + amount);
+        } else {
+          itemQuantityMap.set(stockItemId, amount);
+        }
+      });
+    });
+
+    // Fetch stock items from the StockItem collection based on the stockItemIds
+    const stockItemIds = Array.from(itemQuantityMap.keys());
+    const stockItems = await StockItem.find({ _id: { $in: stockItemIds } }).select("name amount");
+
+    // Prepare the final result
+    const result = stockItems.map(stockItem => {
+      const totalOrderQuantity = itemQuantityMap.get(stockItem._id) || 0; // Quantity required by orders
+      const stockAvailable = stockItem.amount || 0; // Available stock amount
+      const requiredQuantity = totalOrderQuantity - stockAvailable; // Difference (can be negative if stock is sufficient)
+
+      return {
+        stockItemId: stockItem._id,
+        stockItemName: stockItem.name,
+        stockItemQuantity: stockAvailable,
+        requiredQuantity: requiredQuantity > 0 ? requiredQuantity : 0 // Only show positive required quantities
+      };
+    });
+
+    // Send the result as the response
+    res.send(result);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
 // Fetch all orders
 router.get("/", auth, async (req, res) => {
   try {
@@ -293,5 +340,7 @@ const populateOrderItems = async (items) => {
     })
   );
 };
+
+
 
 module.exports = router;
