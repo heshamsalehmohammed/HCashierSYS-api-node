@@ -2,8 +2,8 @@ const {
   OrderStatusDetails,
   OrderStatusEnum,
 } = require("../utils/orderStatusEnum");
-const {Customer} = require("../models/customer");
-const {StockItem} = require("../models/stockItem");
+const { Customer } = require("../models/customer");
+const { StockItem } = require("../models/stockItem");
 const { Order, validate } = require("../models/order");
 const auth = require("../middleware/auth");
 const express = require("express");
@@ -12,10 +12,12 @@ const router = express.Router();
 // Fetch all orders
 router.get("/", auth, async (req, res) => {
   try {
-    const orders = await Order.find();
+    const orders = await Order.find().select("-__v");
     const populatedOrders = await Promise.all(
       orders.map(async (order) => {
-        const customer = await Customer.findById(order.customerId);
+        const customer = await Customer.findById(order.customerId).select(
+          "-__v"
+        );
         const orderStatus = OrderStatusDetails[order.orderStatusId];
         const itemsWithDetails = await populateOrderItems(order.items);
         return {
@@ -35,10 +37,10 @@ router.get("/", auth, async (req, res) => {
 // Fetch an order by ID
 router.get("/:id", auth, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(req.params.id).select("-__v");
     if (!order) return res.status(404).send("Order not found");
 
-    const customer = await Customer.findById(order.customerId);
+    const customer = await Customer.findById(order.customerId).select("-__v");
     const orderStatus = OrderStatusDetails[order.orderStatusId];
     const itemsWithDetails = await populateOrderItems(order.items);
 
@@ -77,8 +79,9 @@ router.post("/", auth, async (req, res) => {
   try {
     const savedOrder = await order.save();
 
-
-    const customer = await Customer.findById(savedOrder.customerId);
+    const customer = await Customer.findById(savedOrder.customerId).select(
+      "-__v"
+    );
     const orderStatus = OrderStatusDetails[savedOrder.orderStatusId];
     const itemsWithDetails = await populateOrderItems(savedOrder.items);
 
@@ -95,6 +98,7 @@ router.post("/", auth, async (req, res) => {
     res.status(400).send(error.message);
   }
 });
+
 // Update an order
 router.put("/:id", auth, async (req, res) => {
   let body = req.body;
@@ -102,17 +106,20 @@ router.put("/:id", auth, async (req, res) => {
   if (error) return res.status(400).send(error.details[0].message);
 
   try {
-    const oldOrder = await Order.findById(req.params.id);
-    if (oldOrder.statusChangeDate != body.statusChangeDate) {
-      body.statusChangeDate = new Date();
-    }
-    body.updatedDate = new Date();
+    const oldOrder = await Order.findById(req.params.id).select("-__v");
+    if (
+      new Date(oldOrder.statusChangeDate).getTime() !==
+        new Date(body.statusChangeDate).getTime()
+    )
+      body.updatedDate = new Date();
     const updatedOrder = await Order.findByIdAndUpdate(req.params.id, body, {
       new: true,
-    });
+    }).select("-__v");
     if (!updatedOrder) return res.status(404).send("Order not found");
 
-    const customer = await Customer.findById(updatedOrder.customerId);
+    const customer = await Customer.findById(updatedOrder.customerId).select(
+      "-__v"
+    );
     const orderStatus = OrderStatusDetails[updatedOrder.orderStatusId];
     const itemsWithDetails = await populateOrderItems(updatedOrder.items);
 
@@ -123,7 +130,6 @@ router.put("/:id", auth, async (req, res) => {
       items: itemsWithDetails,
     };
 
-
     res.send(orderViewModel);
   } catch (error) {
     res.status(500).send(error.message);
@@ -133,7 +139,7 @@ router.put("/:id", auth, async (req, res) => {
 // Delete an order
 router.delete("/:id", auth, async (req, res) => {
   try {
-    const order = await Order.findByIdAndRemove(req.params.id);
+    const order = await Order.findByIdAndRemove(req.params.id).select("-__v");
     if (!order) return res.status(404).send("Order not found");
     res.send(order);
   } catch (error) {
@@ -146,7 +152,9 @@ const populateOrderItems = async (items) => {
   return Promise.all(
     items.map(async (item) => {
       try {
-        const stockItem = await StockItem.findById(item.stockItemId);
+        const stockItem = await StockItem.findById(item.stockItemId).select(
+          "-__v"
+        );
         if (!stockItem) throw new Error("Stock item not found");
 
         const stockItemCustomizations =
