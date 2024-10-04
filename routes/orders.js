@@ -7,17 +7,35 @@ const { StockItem } = require("../models/stockItem");
 const { Order, validate } = require("../models/order");
 const auth = require("../middleware/auth");
 const express = require("express");
+const { applyFilter } = require("../utils/filters");
 const router = express.Router();
 
 // Fetch all orders
 router.get("/", auth, async (req, res) => {
   try {
-    const orders = await Order.find().select("-__v");
+    const {
+      customerName,
+      customerNameFilterMatchMode,
+      customerPhone,
+      customerPhoneFilterMatchMode,
+      totalPrice,
+      totalPriceFilterMatchMode,
+      date,
+      dateFilterMatchMode,
+      statusChangeDate,
+      statusChangeDateFilterMatchMode,
+      orderStatusId,
+      orderStatusIdFilterMatchMode,
+      pageNumber = 0,
+      pageSize = 5,
+    } = req.query;
+
+    // Fetch all orders from the database (without pagination)
+    let orders = await Order.find().select("-__v");
+
     const populatedOrders = await Promise.all(
       orders.map(async (order) => {
-        const customer = await Customer.findById(order.customerId).select(
-          "-__v"
-        );
+        const customer = await Customer.findById(order.customerId).select("-__v");
         const orderStatus = OrderStatusDetails[order.orderStatusId];
         const itemsWithDetails = await populateOrderItems(order.items);
         return {
@@ -28,12 +46,94 @@ router.get("/", auth, async (req, res) => {
         };
       })
     );
-    res.send(populatedOrders);
+
+    // Apply filtering using ComparisonOperators
+    let filteredOrders = populatedOrders;
+
+    if (customerName) {
+      filteredOrders = filteredOrders.filter(order =>
+        applyFilter(
+          customerNameFilterMatchMode,
+          order.customer.name,
+          customerName
+        )
+      );
+    }
+
+    if (customerPhone) {
+      filteredOrders = filteredOrders.filter(order =>
+        applyFilter(
+          customerPhoneFilterMatchMode,
+          order.customer.phone,
+          customerPhone
+        )
+      );
+    }
+
+    if (totalPrice) {
+      filteredOrders = filteredOrders.filter(order =>
+        applyFilter(
+          totalPriceFilterMatchMode,
+          order.totalPrice,
+          parseFloat(totalPrice)
+        )
+      );
+    }
+
+    if (date) {
+      filteredOrders = filteredOrders.filter(order =>
+        applyFilter(
+          dateFilterMatchMode,
+          order.date,
+          date
+        )
+      );
+    }
+
+    if (statusChangeDate) {
+      filteredOrders = filteredOrders.filter(order =>
+        applyFilter(
+          statusChangeDateFilterMatchMode,
+          order.statusChangeDate,
+          statusChangeDate
+        )
+      );
+    }
+
+    if (orderStatusId) {
+      filteredOrders = filteredOrders.filter(order =>
+        applyFilter(
+          orderStatusIdFilterMatchMode,
+          order.orderStatusId,
+          parseInt(orderStatusId)
+        )
+      );
+    }
+
+    // Calculate total number of records before pagination
+    const totalRecords = filteredOrders.length;
+
+    // Calculate initialized state orders count (assuming orderStatusId 1 means "initialized")
+    const initializedStateOrdersCount = filteredOrders.filter(order =>
+      order.orderStatusId === OrderStatusEnum.INITIALIZED // Change this condition as per your "initialized" state logic
+    ).length;
+
+    // Apply pagination
+    const paginatedOrders = filteredOrders.slice(
+      pageNumber * pageSize,
+      (pageNumber + 1) * pageSize
+    );
+
+    // Return totalRecords, initializedStateOrdersCount, and paginated orders
+    res.send({
+      totalRecords,
+      initializedStateOrdersCount,
+      orders: paginatedOrders,
+    });
   } catch (error) {
     res.status(500).send(error.message);
   }
 });
-
 // Fetch an order by ID
 router.get("/:id", auth, async (req, res) => {
   try {
