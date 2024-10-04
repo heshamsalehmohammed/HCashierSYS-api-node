@@ -2,8 +2,8 @@ const {
   OrderStatusDetails,
   OrderStatusEnum,
 } = require("../utils/orderStatusEnum");
-const Customer = require("../models/customer");
-const StockItem = require("../models/stockItem");
+const {Customer} = require("../models/customer");
+const {StockItem} = require("../models/stockItem");
 const { Order, validate } = require("../models/order");
 const auth = require("../middleware/auth");
 const express = require("express");
@@ -76,7 +76,20 @@ router.post("/", auth, async (req, res) => {
 
   try {
     const savedOrder = await order.save();
-    res.status(201).send(savedOrder);
+
+
+    const customer = await Customer.findById(savedOrder.customerId);
+    const orderStatus = OrderStatusDetails[savedOrder.orderStatusId];
+    const itemsWithDetails = await populateOrderItems(savedOrder.items);
+
+    const orderViewModel = {
+      ...savedOrder._doc,
+      customer,
+      orderStatus,
+      items: itemsWithDetails,
+    };
+
+    res.status(201).send(orderViewModel);
   } catch (error) {
     console.log("Error saving order:", error);
     res.status(400).send(error.message);
@@ -99,7 +112,19 @@ router.put("/:id", auth, async (req, res) => {
     });
     if (!updatedOrder) return res.status(404).send("Order not found");
 
-    res.send(updatedOrder);
+    const customer = await Customer.findById(updatedOrder.customerId);
+    const orderStatus = OrderStatusDetails[updatedOrder.orderStatusId];
+    const itemsWithDetails = await populateOrderItems(updatedOrder.items);
+
+    const orderViewModel = {
+      ...updatedOrder._doc,
+      customer,
+      orderStatus,
+      items: itemsWithDetails,
+    };
+
+
+    res.send(orderViewModel);
   } catch (error) {
     res.status(500).send(error.message);
   }
