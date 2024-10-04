@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {Order} = require("../models/order");
-const {User} = require("../models/user");
+const {Customer} = require("../models/customer");
 const {StockItem} = require("../models/stockItem");
 
 // Helper function to calculate date range based on days
@@ -41,14 +41,14 @@ router.get("/", async (req, res) => {
         totalOrders > 0 ? ((initializedOrdersCount / totalOrders) * 100).toFixed(2) : 0;
   
       // 2. Fetch newly added users count within the selected date range
-      const newlyAddedUsers = await User.find({
+      const newlyAddedUsers = await Customer.find({
         creationDate: { $gte: newlyAddedStart, $lte: newlyAddedEnd },
       });
   
       const newlyAddedUsersCount = newlyAddedUsers.length;
   
       // Total users for the percentage calculation
-      const totalUsers = await User.countDocuments();
+      const totalUsers = await Customer.countDocuments();
   
       const newlyAddedUsersCountPercent =
         totalUsers > 0 ? ((newlyAddedUsersCount / totalUsers) * 100).toFixed(2) : 0;
