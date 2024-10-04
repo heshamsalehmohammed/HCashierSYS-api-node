@@ -2,6 +2,7 @@ const express = require('express');
 const customers = require('../routes/customers');
 const stockItems = require('../routes/stockItems');
 const orders = require('../routes/orders');
+const statistics = require('../routes/statistics');
 const orderStatuses = require('../routes/orderStatuses');
 const users = require('../routes/users');
 const auth = require('../routes/auth');
@@ -14,6 +15,7 @@ module.exports = function(app) {
   app.use('/api/orders', orders);
   app.use('/api/orderStatuses', orderStatuses);
   app.use('/api/users', users);
+  app.use('/api/statistics', statistics);
   app.use('/api/auth', auth);
   app.use(error);
 }
