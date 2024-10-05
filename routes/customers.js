@@ -46,7 +46,8 @@ router.put("/:id", auth, async (req, res) => {
       name: req.body.name,
       address: req.body.address,
       phone: req.body.phone,
-      updatedByUserId: req.user._id
+      updatedByUserId: req.user._id,
+      updatedDate: new Date(),
     },
     { new: true }
   );

@@ -185,6 +185,7 @@ router.get("/", auth, async (req, res) => {
     res.status(500).send(error.message);
   }
 });
+
 // Fetch an order by ID
 router.get("/:id", auth, async (req, res) => {
   try {
@@ -259,20 +260,46 @@ router.put("/:id", auth, async (req, res) => {
 
   try {
     const oldOrder = await Order.findById(req.params.id).select("-__v");
-    if (
-      new Date(oldOrder.statusChangeDate).getTime() !==
-      new Date(body.statusChangeDate).getTime()
-    )
-      body.updatedDate = new Date();
+    if (oldOrder.orderStatusId !== body.orderStatusId) {
+      body.statusChangeDate = new Date();
+
+      // If order status changes to DELIVERED
+      if (body.orderStatusId == OrderStatusEnum.DELIVERED) {
+        // Iterate over each item in the order
+        for (const item of oldOrder.items) {
+          // Find the stock item in the database
+          const stockItem = await StockItem.findById(item.stockItemId);
+          if (!stockItem) {
+            return res.status(404).send(`StockItem with ID ${item.stockItemId} not found.`);
+          }
+
+          // Decrease the stock amount by the ordered amount
+          if (stockItem.amount >= item.amount) {
+            stockItem.amount -= item.amount; // Reduce the stock
+          } else {
+            return res.status(400).send(
+              `Not enough stock for item ${stockItem.name}. Available: ${stockItem.amount}, Ordered: ${item.amount}`
+            );
+          }
+
+          // Save the updated stock item
+          await stockItem.save();
+        }
+      } else if (body.orderStatusId == OrderStatusEnum.PROCESSING) {
+        // Add your logic for processing status here if needed
+      }
+    }
+
+    // Update the order
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
-      { ...body, updatedByUserId: req.user._id },
-      {
-        new: true,
-      }
+      { ...body, updatedByUserId: req.user._id, updatedDate: new Date() },
+      { new: true }
     ).select("-__v");
+
     if (!updatedOrder) return res.status(404).send("Order not found");
 
+    // Get customer details and populate items with details
     const customer = await Customer.findById(updatedOrder.customerId).select(
       "-__v"
     );
