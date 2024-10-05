@@ -23,15 +23,16 @@ router.get("/itemsPreperations", auth, async (req, res) => {
     initializedOrders.forEach((order) => {
       order.items.forEach((item) => {
         const { stockItemId, amount } = item;
+        const stockItemIdStr = stockItemId.toString();
 
         // Add the amount for this stockItemId
-        if (itemQuantityMap.has(stockItemId)) {
+        if (itemQuantityMap.has(stockItemIdStr)) {
           itemQuantityMap.set(
-            stockItemId,
-            itemQuantityMap.get(stockItemId) + amount
+            stockItemIdStr,
+            itemQuantityMap.get(stockItemIdStr) + amount
           );
         } else {
-          itemQuantityMap.set(stockItemId, amount);
+          itemQuantityMap.set(stockItemIdStr, amount);
         }
       });
     });
@@ -40,11 +41,11 @@ router.get("/itemsPreperations", auth, async (req, res) => {
     const stockItemIds = Array.from(itemQuantityMap.keys());
     const stockItems = await StockItem.find({
       _id: { $in: stockItemIds },
-    }).select("name amount");
+    }).select("_id name amount");
 
     // Prepare the final result
     const result = stockItems.map((stockItem) => {
-      const totalOrderQuantity = itemQuantityMap.get(stockItem._id) || 0; // Quantity required by orders
+      const totalOrderQuantity = itemQuantityMap.get(stockItem._id.toString()) || 0; // Quantity required by orders
       const stockAvailable = stockItem.amount || 0; // Available stock amount
       const requiredQuantity = totalOrderQuantity - stockAvailable; // Difference (can be negative if stock is sufficient)
 
