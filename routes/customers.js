@@ -28,7 +28,8 @@ router.post("/", auth, async (req, res) => {
   let customer = new Customer({
     name: req.body.name,
     address: req.body.address,
-    phone: req.body.phone
+    phone: req.body.phone,
+    createdByUserId: req.user._id
   });
   customer = await customer.save();
 
@@ -44,7 +45,8 @@ router.put("/:id", auth, async (req, res) => {
     {
       name: req.body.name,
       address: req.body.address,
-      phone: req.body.phone
+      phone: req.body.phone,
+      updatedByUserId: req.user._id
     },
     { new: true }
   );

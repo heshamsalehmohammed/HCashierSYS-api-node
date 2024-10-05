@@ -10,22 +10,26 @@ const express = require("express");
 const { applyFilter } = require("../utils/filters");
 const router = express.Router();
 
-
 router.get("/itemsPreperations", auth, async (req, res) => {
   try {
     // Fetch all orders with 'Initialized Status' (assuming orderStatusId === 1 means Initialized)
-    const initializedOrders = await Order.find({ orderStatusId: OrderStatusEnum.INITIALIZED }).select("items");
+    const initializedOrders = await Order.find({
+      orderStatusId: OrderStatusEnum.INITIALIZED,
+    }).select("items");
 
     // Calculate required quantity for each stock item across all orders
     const itemQuantityMap = new Map(); // To keep track of total quantity required per stock item
 
-    initializedOrders.forEach(order => {
-      order.items.forEach(item => {
+    initializedOrders.forEach((order) => {
+      order.items.forEach((item) => {
         const { stockItemId, amount } = item;
 
         // Add the amount for this stockItemId
         if (itemQuantityMap.has(stockItemId)) {
-          itemQuantityMap.set(stockItemId, itemQuantityMap.get(stockItemId) + amount);
+          itemQuantityMap.set(
+            stockItemId,
+            itemQuantityMap.get(stockItemId) + amount
+          );
         } else {
           itemQuantityMap.set(stockItemId, amount);
         }
@@ -34,10 +38,12 @@ router.get("/itemsPreperations", auth, async (req, res) => {
 
     // Fetch stock items from the StockItem collection based on the stockItemIds
     const stockItemIds = Array.from(itemQuantityMap.keys());
-    const stockItems = await StockItem.find({ _id: { $in: stockItemIds } }).select("name amount");
+    const stockItems = await StockItem.find({
+      _id: { $in: stockItemIds },
+    }).select("name amount");
 
     // Prepare the final result
-    const result = stockItems.map(stockItem => {
+    const result = stockItems.map((stockItem) => {
       const totalOrderQuantity = itemQuantityMap.get(stockItem._id) || 0; // Quantity required by orders
       const stockAvailable = stockItem.amount || 0; // Available stock amount
       const requiredQuantity = totalOrderQuantity - stockAvailable; // Difference (can be negative if stock is sufficient)
@@ -46,7 +52,7 @@ router.get("/itemsPreperations", auth, async (req, res) => {
         stockItemId: stockItem._id,
         stockItemName: stockItem.name,
         stockItemQuantity: stockAvailable,
-        requiredQuantity: requiredQuantity > 0 ? requiredQuantity : 0 // Only show positive required quantities
+        requiredQuantity: requiredQuantity > 0 ? requiredQuantity : 0, // Only show positive required quantities
       };
     });
 
@@ -82,7 +88,9 @@ router.get("/", auth, async (req, res) => {
 
     const populatedOrders = await Promise.all(
       orders.map(async (order) => {
-        const customer = await Customer.findById(order.customerId).select("-__v");
+        const customer = await Customer.findById(order.customerId).select(
+          "-__v"
+        );
         const orderStatus = OrderStatusDetails[order.orderStatusId];
         const itemsWithDetails = await populateOrderItems(order.items);
         return {
@@ -98,7 +106,7 @@ router.get("/", auth, async (req, res) => {
     let filteredOrders = populatedOrders;
 
     if (customerName) {
-      filteredOrders = filteredOrders.filter(order =>
+      filteredOrders = filteredOrders.filter((order) =>
         applyFilter(
           customerNameFilterMatchMode,
           order.customer.name,
@@ -108,7 +116,7 @@ router.get("/", auth, async (req, res) => {
     }
 
     if (customerPhone) {
-      filteredOrders = filteredOrders.filter(order =>
+      filteredOrders = filteredOrders.filter((order) =>
         applyFilter(
           customerPhoneFilterMatchMode,
           order.customer.phone,
@@ -118,7 +126,7 @@ router.get("/", auth, async (req, res) => {
     }
 
     if (totalPrice) {
-      filteredOrders = filteredOrders.filter(order =>
+      filteredOrders = filteredOrders.filter((order) =>
         applyFilter(
           totalPriceFilterMatchMode,
           order.totalPrice,
@@ -128,17 +136,13 @@ router.get("/", auth, async (req, res) => {
     }
 
     if (date) {
-      filteredOrders = filteredOrders.filter(order =>
-        applyFilter(
-          dateFilterMatchMode,
-          order.date,
-          date
-        )
+      filteredOrders = filteredOrders.filter((order) =>
+        applyFilter(dateFilterMatchMode, order.date, date)
       );
     }
 
     if (statusChangeDate) {
-      filteredOrders = filteredOrders.filter(order =>
+      filteredOrders = filteredOrders.filter((order) =>
         applyFilter(
           statusChangeDateFilterMatchMode,
           order.statusChangeDate,
@@ -148,7 +152,7 @@ router.get("/", auth, async (req, res) => {
     }
 
     if (orderStatusId) {
-      filteredOrders = filteredOrders.filter(order =>
+      filteredOrders = filteredOrders.filter((order) =>
         applyFilter(
           orderStatusIdFilterMatchMode,
           order.orderStatusId,
@@ -161,8 +165,8 @@ router.get("/", auth, async (req, res) => {
     const totalRecords = filteredOrders.length;
 
     // Calculate initialized state orders count (assuming orderStatusId 1 means "initialized")
-    const initializedStateOrdersCount = filteredOrders.filter(order =>
-      order.orderStatusId === OrderStatusEnum.INITIALIZED // Change this condition as per your "initialized" state logic
+    const initializedStateOrdersCount = filteredOrders.filter(
+      (order) => order.orderStatusId === OrderStatusEnum.INITIALIZED // Change this condition as per your "initialized" state logic
     ).length;
 
     // Apply pagination
@@ -221,6 +225,7 @@ router.post("/", auth, async (req, res) => {
     totalPrice,
     orderStatusId:
       orderStatusId === 0 ? OrderStatusEnum.INITIALIZED : orderStatusId,
+    createdByUserId: req.user._id,
   });
 
   try {
@@ -256,12 +261,16 @@ router.put("/:id", auth, async (req, res) => {
     const oldOrder = await Order.findById(req.params.id).select("-__v");
     if (
       new Date(oldOrder.statusChangeDate).getTime() !==
-        new Date(body.statusChangeDate).getTime()
+      new Date(body.statusChangeDate).getTime()
     )
       body.updatedDate = new Date();
-    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, body, {
-      new: true,
-    }).select("-__v");
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      { ...body, updatedByUserId: req.user._id },
+      {
+        new: true,
+      }
+    ).select("-__v");
     if (!updatedOrder) return res.status(404).send("Order not found");
 
     const customer = await Customer.findById(updatedOrder.customerId).select(
@@ -340,7 +349,5 @@ const populateOrderItems = async (items) => {
     })
   );
 };
-
-
 
 module.exports = router;

@@ -1,34 +1,35 @@
 const Joi = require("joi");
 const mongoose = require("mongoose");
+const timestampsAndUserTracking = require("../utils/timestampsAndUserTracking");
 
-const Customer = mongoose.model(
-  "Customer",
-  new mongoose.Schema({
-    name: {
-      type: String,
-      required: true,
-      minlength: 5,
-      maxlength: 100,
-    },
-    phone: {
-      type: String,
-      required: true,
-      minlength: 5,
-      maxlength: 50,
-    },
-    address: {
-      type: String,
-      required: true,
-      minlength: 5,
-      maxlength: 5000,
-    },
-    creationDate: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
-  })
-);
+const CustomerSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    minlength: 5,
+    maxlength: 100,
+  },
+  phone: {
+    type: String,
+    required: true,
+    minlength: 5,
+    maxlength: 50,
+  },
+  address: {
+    type: String,
+    required: true,
+    minlength: 5,
+    maxlength: 5000,
+  },
+  creationDate: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+  ...timestampsAndUserTracking,
+});
+
+const Customer = mongoose.model("Customer", CustomerSchema);
 
 function validateCustomer(customer) {
   const schema = Joi.object({

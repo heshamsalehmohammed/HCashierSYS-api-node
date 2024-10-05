@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const JoiObjectId = require("joi-objectid")(Joi); // Pass Joi explicitly to initialize joi-objectid
 const mongoose = require("mongoose");
+const timestampsAndUserTracking = require("../utils/timestampsAndUserTracking");
 
 // Order Item Customizations Schema
 const OrderItemCustomizationSchema = new mongoose.Schema({
@@ -41,37 +42,37 @@ const OrderItemSchema = new mongoose.Schema({
 
 // Order Schema
 
-const Order = mongoose.model(
-  "Order",
-  new mongoose.Schema({
-    date: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
-    statusChangeDate: {
-      type: Date,
-      default: null,
-    },
-    updatedDate: {
-      type: Date,
-      default: null,
-    },
-    customerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-    },
-    items: [OrderItemSchema],
-    totalPrice: {
-      type: Number,
-      required: true,
-    },
-    orderStatusId: {
-      type: Number,
-      required: true,
-    },
-  })
-);
+const OrderSchema = new mongoose.Schema({
+  date: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+  statusChangeDate: {
+    type: Date,
+    default: null,
+  },
+  updatedDate: {
+    type: Date,
+    default: null,
+  },
+  customerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
+  items: [OrderItemSchema],
+  totalPrice: {
+    type: Number,
+    required: true,
+  },
+  orderStatusId: {
+    type: Number,
+    required: true,
+  },
+  ...timestampsAndUserTracking,
+});
+
+const Order = mongoose.model("Order", OrderSchema);
 
 function validateOrder(order) {
   const schema = Joi.object({

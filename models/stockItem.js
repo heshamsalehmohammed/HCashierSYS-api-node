@@ -1,5 +1,6 @@
 const Joi = require("joi");
 const mongoose = require("mongoose");
+const timestampsAndUserTracking = require("../utils/timestampsAndUserTracking");
 
 const CustomizationOptionSchema = new mongoose.Schema({
   name: {
@@ -46,9 +47,14 @@ const StockItemSchema = new mongoose.Schema({
     min: 0,
   },
   customizations: {
-    type: [CustomizationSchema], // Customizations are optional and can be an array of objects
+    type: [CustomizationSchema],
     default: [],
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  ...timestampsAndUserTracking,
 });
 
 const StockItem = mongoose.model("StockItem", StockItemSchema);
