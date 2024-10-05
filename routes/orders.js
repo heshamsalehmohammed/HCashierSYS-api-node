@@ -338,7 +338,7 @@ const populateOrderItems = async (items) => {
         const stockItem = await StockItem.findById(item.stockItemId).select(
           "-__v"
         );
-        if (!stockItem) throw new Error("Stock item not found");
+        if (!stockItem) return null; // Skip this item if the stock item is not found
 
         const stockItemCustomizations =
           item.stockItemCustomizationsSelectedOptions.map((customization) => {
@@ -369,12 +369,12 @@ const populateOrderItems = async (items) => {
           price: item.price,
         };
       } catch (error) {
-        throw new Error(
-          `Error populating order item details: ${error.message}`
-        );
+        // Log error and skip item without throwing
+        console.error(`Error populating order item: ${error.message}`);
+        return null; // Skip this item if an error occurs
       }
     })
-  );
+  ).then((populatedItems) => populatedItems.filter(item => item !== null)); // Filter out null items
 };
 
 module.exports = router;
