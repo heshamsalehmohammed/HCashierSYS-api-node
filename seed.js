@@ -1,65 +1,39 @@
-/* const { Genre } = require("./models/genre");
-const { Movie } = require("./models/movie");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const config = require("config");
+const { User } = require("./models/user");
 
-const data = [
+const usersData = [
   {
-    name: "Comedy",
-    movies: [
-      { title: "Airplane", numberInStock: 5, dailyRentalRate: 2 },
-      { title: "The Hangover", numberInStock: 10, dailyRentalRate: 2 },
-      { title: "Wedding Crashers", numberInStock: 15, dailyRentalRate: 2 }
-    ]
+    name: "admin",
+    email: "admin@gmail.com",
+    password: "123456"
   },
   {
-    name: "Action",
-    movies: [
-      { title: "Die Hard", numberInStock: 5, dailyRentalRate: 2 },
-      { title: "Terminator", numberInStock: 10, dailyRentalRate: 2 },
-      { title: "The Avengers", numberInStock: 15, dailyRentalRate: 2 }
-    ]
-  },
-  {
-    name: "Romance",
-    movies: [
-      { title: "The Notebook", numberInStock: 5, dailyRentalRate: 2 },
-      { title: "When Harry Met Sally", numberInStock: 10, dailyRentalRate: 2 },
-      { title: "Pretty Woman", numberInStock: 15, dailyRentalRate: 2 }
-    ]
-  },
-  {
-    name: "Thriller",
-    movies: [
-      { title: "The Sixth Sense", numberInStock: 5, dailyRentalRate: 2 },
-      { title: "Gone Girl", numberInStock: 10, dailyRentalRate: 2 },
-      { title: "The Others", numberInStock: 15, dailyRentalRate: 2 }
-    ]
+    name: "hesham",
+    email: "hesham.saleh.mohammed@gmail.com",
+    password: "hcashiersys-182937Cranshy*"
   }
 ];
 
 async function seed() {
-  await mongoose.connect(config.get("db"), {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+  await mongoose.connect(config.get("db"),{
+    useNewUrlParser: true, // Using new URL string parser
+    useUnifiedTopology: true // Using new Server Discovery and Monitoring engine
   });
 
-  await Movie.deleteMany({});
-  await Genre.deleteMany({});
+  await User.deleteMany({});
 
-  for (let genre of data) {
-    const { _id: genreId } = await new Genre({ name: genre.name }).save();
-    const movies = genre.movies.map(movie => ({
-      ...movie,
-      genre: { _id: genreId, name: genre.name }
-    }));
-    await Movie.insertMany(movies);
+  for (let userData of usersData) {
+    const user = new User(userData);
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
+    await user.save();
   }
 
   mongoose.disconnect();
 
-  console.info("Done!");
+  console.info("Users seeded successfully!");
 }
 
 seed();
- */

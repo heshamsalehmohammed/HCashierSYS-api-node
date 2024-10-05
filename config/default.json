@@ -2,5 +2,5 @@
   "jwtPrivateKey": "unsecureKey",
   "db": "mongodb://mongo:XZzxFWnpbsNcVoXUHNeleDgtpeVuaQVG@autorack.proxy.rlwy.net:49856/",
   "port": "3900",
-  "requiresAuth": false 
+  "requiresAuth": true 
 }

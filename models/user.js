@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 2,
-    maxlength: 50
+    maxlength: 50,
+    unique: true
   },
   email: {
     type: String,
@@ -23,7 +24,7 @@ const userSchema = new mongoose.Schema({
     minlength: 5,
     maxlength: 1024
   },
-  isAdmin: Boolean
+  isAdmin: Boolean,
 });
 
 userSchema.methods.generateAuthToken = function() {
@@ -43,19 +44,9 @@ const User = mongoose.model("User", userSchema);
 
 function validateUser(user) {
   const schema = Joi.object({
-    name: Joi.string()
-      .min(2)
-      .max(50)
-      .required(),
-    email: Joi.string()
-      .min(5)
-      .max(255)
-      .required()
-      .email(),
-    password: Joi.string()
-      .min(5)
-      .max(255)
-      .required()
+    name: Joi.string().min(2).max(50).required(),
+    email: Joi.string().min(5).max(255).required().email(),
+    password: Joi.string().min(5).max(255).required()
   });
 
   return schema.validate(user);

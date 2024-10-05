@@ -3,6 +3,8 @@ const router = express.Router();
 const {Order} = require("../models/order");
 const {Customer} = require("../models/customer");
 const {StockItem} = require("../models/stockItem");
+const auth = require("../middleware/auth");
+
 
 // Helper function to calculate date range based on days
 const getDateRange = (days) => {
@@ -13,7 +15,7 @@ const getDateRange = (days) => {
 };
 
 // New route for fetching statistics
-router.get("/", async (req, res) => {
+router.get("/",auth, async (req, res) => {
     try {
       const {
         selectedInitializedOrdersCountOption,
