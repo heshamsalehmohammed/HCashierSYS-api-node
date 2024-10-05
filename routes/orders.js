@@ -168,7 +168,7 @@ router.get("/", auth, async (req, res) => {
     // Apply pagination
     const paginatedOrders = filteredOrders.slice(
       pageNumber * pageSize,
-      (pageNumber + 1) * pageSize
+      Math.min((pageNumber + 1) * pageSize, filteredOrders.length)
     );
 
     // Return totalRecords, initializedStateOrdersCount, and paginated orders
