@@ -1,7 +1,12 @@
+const dotenv = require('dotenv');
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+dotenv.config({ path: envFile });
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const config = require("config");
 const { User } = require("./models/user");
+
+console.log('DATABASE_CONNECTION_URL:', process.env.DATABASE_CONNECTION_URL);
 
 const usersData = [
   {
@@ -31,7 +36,7 @@ const usersData = [
 ];
 
 async function seed() {
-  await mongoose.connect(config.get("db"),{
+  await mongoose.connect(process.env.DATABASE_CONNECTION_URL,{
     useNewUrlParser: true, // Using new URL string parser
     useUnifiedTopology: true // Using new Server Discovery and Monitoring engine
   });

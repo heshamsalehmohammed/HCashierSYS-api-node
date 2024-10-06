@@ -1,7 +1,6 @@
 {
   "jwtPrivateKey": "adacfa44f666919e858245cfbe83ee51b88f12567e39d09bee7542ac1c7cea3b",
   "sessionSecret": "f7c17f8adcde891e51dfaa8b739d1991527bc7e2c4b2b262a07aae01fe8582c9",
-  "db": "mongodb://mongo:XZzxFWnpbsNcVoXUHNeleDgtpeVuaQVG@autorack.proxy.rlwy.net:49856/",
   "port": "3900",
   "requiresAuth": true 
 }
