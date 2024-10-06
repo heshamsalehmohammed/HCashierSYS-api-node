@@ -140,9 +140,16 @@ const sendMessageToUserSessions = async (userId, message) => {
 
 // Function to broadcast a message to all connected sessions
 const broadcastMessage = (message) => {
-  wss.clients.forEach((ws) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(message);
+  return new Promise((resolve, reject) => {
+    try {
+      wss.clients.forEach((ws) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+        }
+      });
+      resolve();
+    } catch (error) {
+      reject(error);
     }
   });
 };

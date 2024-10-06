@@ -4,6 +4,7 @@ const {Order} = require("../models/order");
 const {Customer} = require("../models/customer");
 const {StockItem} = require("../models/stockItem");
 const auth = require("../middleware/auth");
+const { OrderStatusEnum } = require("../utils/orderStatusEnum");
 
 
 // Helper function to calculate date range based on days
@@ -18,20 +19,17 @@ const getDateRange = (days) => {
 router.get("/",auth, async (req, res) => {
     try {
       const {
-        selectedInitializedOrdersCountOption,
         selectedMostSoldStockItemOption,
         selectedNewlyAddedUsersCountOption,
       } = req.query;
   
       // Date ranges based on the provided criteria
-      const { start: initializedStart, end: initializedEnd } = getDateRange(selectedInitializedOrdersCountOption);
       const { start: mostSoldStart, end: mostSoldEnd } = getDateRange(selectedMostSoldStockItemOption);
       const { start: newlyAddedStart, end: newlyAddedEnd } = getDateRange(selectedNewlyAddedUsersCountOption);
   
       // 1. Fetch initialized orders count within the selected date range
       const initializedOrders = await Order.find({
-        orderStatusId: 1, // Assuming orderStatusId === 1 means "Initialized"
-        date: { $gte: initializedStart, $lte: initializedEnd },
+        orderStatusId: OrderStatusEnum.INITIALIZED,
       });
   
       const initializedOrdersCount = initializedOrders.length;
@@ -58,7 +56,7 @@ router.get("/",auth, async (req, res) => {
       // 3. Find the most sold stock item in all orders (not just initialized)
       const ordersWithinPeriod = await Order.find({
         date: { $gte: mostSoldStart, $lte: mostSoldEnd },
-        orderStatusId: { $in: [1, 2, 3] }, // Assuming 1 = initialized, 2 = processing, 3 = delivered
+        orderStatusId: { $in: [OrderStatusEnum.INITIALIZED, OrderStatusEnum.PROCESSING, OrderStatusEnum.DELIVERED] }, // Assuming 1 = initialized, 2 = processing, 3 = delivered
       });
   
       // Count stock item quantities

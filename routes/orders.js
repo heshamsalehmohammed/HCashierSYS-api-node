@@ -8,6 +8,7 @@ const { Order, validate } = require("../models/order");
 const auth = require("../middleware/auth");
 const express = require("express");
 const { applyFilter } = require("../utils/filters");
+const { broadcastMessage } = require("../services/webSocketService");
 const router = express.Router();
 
 router.get("/itemsPreperations", auth, async (req, res) => {
@@ -164,21 +165,15 @@ router.get("/", auth, async (req, res) => {
     // Calculate total number of records before pagination
     const totalRecords = filteredOrders.length;
 
-    // Calculate initialized state orders count (assuming orderStatusId 1 means "initialized")
-    const initializedStateOrdersCount = filteredOrders.filter(
-      (order) => order.orderStatusId === OrderStatusEnum.INITIALIZED // Change this condition as per your "initialized" state logic
-    ).length;
-
     // Apply pagination
     const paginatedOrders = filteredOrders.slice(
       pageNumber * pageSize,
       Math.min((pageNumber + 1) * pageSize, filteredOrders.length)
     );
 
-    // Return totalRecords, initializedStateOrdersCount, and paginated orders
+    // Return totalRecords, and paginated orders
     res.send({
       totalRecords,
-      initializedStateOrdersCount,
       orders: paginatedOrders,
     });
   } catch (error) {
@@ -245,7 +240,23 @@ router.post("/", auth, async (req, res) => {
       items: itemsWithDetails,
     };
 
+    // Send the HTTP response immediately after processing
     res.status(201).send(orderViewModel);
+
+    // Broadcast the message without awaiting
+    broadcastMessage(
+      JSON.stringify({
+        type: "action",
+        message: "",
+        reduxActionToBeDispatched: 'statistics/increaseInitializedOrdersCountBy',
+        reduxActionPayloadToBeSent: 1,
+      })
+    ).catch((error) => console.error("Broadcast error:", error));
+
+    // Alternatively, use setImmediate to schedule it
+    // setImmediate(() => {
+    //   broadcastMessage(...).catch((error) => console.error("Broadcast error:", error));
+    // });
   } catch (error) {
     console.log("Error saving order:", error);
     res.status(400).send(error.message);

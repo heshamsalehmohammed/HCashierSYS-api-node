@@ -14,7 +14,18 @@ router.get("/", auth, async (req, res) => {
   };
 
   const stockItems = await StockItem.find(query).select("-__v").sort("name");
-  await broadcastMessage(JSON.stringify({type:'message',message:'hello from stock'}))
+  /* await broadcastMessage(
+    JSON.stringify({
+      type: "action",
+      message: "",
+      reduxActionToBeDispatched: 'utilities/showToast',
+      reduxActionPayloadToBeSent: {
+        message: 'hello from stock !!!!!!!!!!!!!!!!!!',
+        severity: 'success',
+        summary: 'Success'
+      },
+    })
+  ); */
 
   res.send(stockItems);
 });
