@@ -17,6 +17,12 @@ const usersData = [
     role: "admin"
   },
   {
+    name: "master",
+    email: "master@gmail.com",
+    password: "123456",
+    role: "master"
+  },
+  {
     name: "hesham",
     email: "hesham.saleh.mohammed@gmail.com",
     password: "hcashiersys-182937Cranshy*",
