@@ -33,14 +33,9 @@ router.post('/login', async (req, res) => {
 // Logout route
 router.post('/logout', (req, res) => {
   // Clear token on client side (optional for server-side processing)
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).send('Failed to log out');
-    }
-    res.send({ message: 'Logged out successfully.' });
-  });
-  
+  res.send({ message: 'Logged out successfully.' });
 });
+
 
 // Register route
 router.post('/register', async (req, res) => {
