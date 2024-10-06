@@ -84,7 +84,6 @@ router.get("/", auth, async (req, res) => {
       pageSize = 5,
     } = req.query;
 
-    // Fetch all orders from the database (without pagination)
     let orders = await Order.find().select("-__v");
 
     const populatedOrders = await Promise.all(
