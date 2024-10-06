@@ -25,9 +25,10 @@ const userSchema = new mongoose.Schema({
     minlength: 5,
     maxlength: 1024,
   },
-  isAdmin: {
-    type: Boolean,
-    default: false,
+  role: {
+    type: String,
+    enum: ['master', 'admin', 'user'], // Define the valid roles
+    default: 'user', // Default to 'user' if not specified
   },
 });
 
@@ -39,7 +40,7 @@ userSchema.methods.generateAuthToken = function() {
       _id: this._id,
       name: this.name,
       email: this.email,
-      isAdmin: this.isAdmin
+      role: this.role // Include the role (master, admin, user) in the token
     },
     config.get("jwtPrivateKey")
   );

@@ -5,7 +5,7 @@ const { broadcastMessage } = require("../services/webSocketService");
 const router = express.Router();
 
 // Get all stock items (with optional search by name)
-router.get("/", auth, async (req, res) => {
+router.get("/", [auth /* , role("master") */], async (req, res) => {
   const { searchTerm } = req.query;
 
   const query = {
