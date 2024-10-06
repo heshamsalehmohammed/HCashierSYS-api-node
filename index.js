@@ -1,23 +1,34 @@
-const winston = require("winston");
-const express = require("express");
-const config = require("config");
+// index.js
+
+const winston = require('winston');
+const express = require('express');
+const http = require('http');
+const config = require('config');
+const { initializeWebSocketServer } = require('./services/webSocketService');
+
 const app = express();
 
-require("./startup/logging")();
-require("./startup/cors")(app);
-require("./startup/session")(app);
-require("./startup/routes")(app);
-require("./startup/db")();
-require("./startup/config")();
-require("./startup/validation")();
+// Apply critical initial configurations and middleware
+require('./startup/logging')();
+require('./startup/config')();
+require('./startup/cors')(app);
+require('./startup/db')();
 
-require("./startup/sessionRoute")(app);
+// Load validation and routes
+require('./startup/validation')();
+require('./startup/routes')(app);
 
-const port = process.env.PORT || config.get("port");
-const server = app.listen(port, () =>
-  winston.info(`Listening on port ${port}...`)
-);
+// Initialize WebSocket server
+const server = http.createServer(app);
+initializeWebSocketServer(server);
+
+// Add error handling for WebSocket or HTTP errors
+server.on('error', (err) => {
+  winston.error(`Server error: ${err.message}`);
+});
+
+// Start the server
+const port = process.env.PORT || config.get('port');
+server.listen(port, () => winston.info(`Listening on port ${port}...`));
 
 module.exports = server;
-
-

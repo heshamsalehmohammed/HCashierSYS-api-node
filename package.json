@@ -13,22 +13,22 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "config": "^1.29.4",
+    "config": "^1.31.0",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "express-async-errors": "^2.1.0",
-    "express-session": "^1.18.0",
     "fawn": "^2.1.5",
     "joi": "^17.13.3",
     "joi-objectid": "^3.0.1",
     "jsonwebtoken": "^8.1.1",
     "lodash": "^4.17.10",
     "moment": "^2.20.1",
-    "mongoose": "^5.0.2",
+    "mongoose": "^5.13.22",
     "uuid": "^10.0.0",
     "vidly": "file:",
     "winston": "^2.4.0",
-    "winston-mongodb": "^3.0.0"
+    "winston-mongodb": "^3.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "jest": "^22.2.2",

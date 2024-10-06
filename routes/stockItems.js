@@ -1,6 +1,7 @@
 const { StockItem, validate } = require("../models/stockItem");
 const auth = require("../middleware/auth");
 const express = require("express");
+const { broadcastMessage } = require("../services/webSocketService");
 const router = express.Router();
 
 // Get all stock items (with optional search by name)
@@ -13,6 +14,7 @@ router.get("/", auth, async (req, res) => {
   };
 
   const stockItems = await StockItem.find(query).select("-__v").sort("name");
+  await broadcastMessage(JSON.stringify({type:'message',message:'hello from stock'}))
 
   res.send(stockItems);
 });

@@ -5,22 +5,41 @@ const { User } = require('../models/user');
 const express = require('express');
 const router = express.Router();
 
+
 // Login route
 router.post('/login', async (req, res) => {
   const { error } = validateLogin(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  let user = await User.findOne({ $or: [{ email: req.body.emailOrName }, { name: req.body.emailOrName }] });
-  if (!user) return res.status(400).send('Invalid email, name or password.');
+  let user = await User.findOne({
+    $or: [{ email: req.body.emailOrName }, { name: req.body.emailOrName }],
+  });
+  if (!user) return res.status(400).send('Invalid email, name, or password.');
 
   const validPassword = await bcrypt.compare(req.body.password, user.password);
-  if (!validPassword) return res.status(400).send('Invalid email, name or password.');
+  if (!validPassword)
+    return res.status(400).send('Invalid email, name, or password.');
 
+  // Generate auth token
   const token = user.generateAuthToken();
+
+  // Send response back to client
   res.send({
-    token,                // Return the generated token
-    user: _.pick(user, ["_id", "name", "email"]) // Return the user object (excluding sensitive data)
+    token, // Return the generated token
+    user: _.pick(user, ['_id', 'name', 'email']), // Return the user object
   });
+});
+
+// Logout route
+router.post('/logout', (req, res) => {
+  // Clear token on client side (optional for server-side processing)
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send('Failed to log out');
+    }
+    res.send({ message: 'Logged out successfully.' });
+  });
+  
 });
 
 // Register route
@@ -45,11 +64,7 @@ router.post('/register', async (req, res) => {
     });
 });
 
-// Logout route
-router.post('/logout', (req, res) => {
-  // Clear token on client side (optional for server-side processing)
-  res.send({ message: 'Logged out successfully.' });
-});
+
 
 // Validate login input
 function validateLogin(req) {
