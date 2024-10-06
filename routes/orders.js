@@ -93,7 +93,7 @@ router.get("/", auth, async (req, res) => {
           "-__v"
         );
         const orderStatus = OrderStatusDetails[order.orderStatusId];
-        const itemsWithDetails = await populateOrderItems(order.items);
+        const itemsWithDetails =/*  await populateOrderItems(order.items); */[];
         return {
           ...order._doc,
           customer,
