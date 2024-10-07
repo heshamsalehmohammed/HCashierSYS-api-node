@@ -166,9 +166,47 @@ const sendMessageToSession = async (sessionId, message) => {
   }
 };
 
+// Function to close a specific session
+const closeSession = async (sessionId) => {
+  const ws = Array.from(wss.clients).find(
+    (client) => client.sessionId === sessionId
+  );
+  if (ws) {
+    ws.close();
+    console.log(`Closed WebSocket for session ${sessionId}`);
+  } else {
+    console.log(`WebSocket for session ${sessionId} not found`);
+  }
+  // Update the session in MongoDB
+  await WebSocketSession.updateOne({ sessionId }, { connected: false });
+};
+
+// Function to close all sessions for a specific user
+const closeUserSessions = async (userId) => {
+  const sessions = await WebSocketSession.find({ userId, connected: true });
+
+  sessions.forEach((session) => {
+    const ws = Array.from(wss.clients).find(
+      (client) => client.sessionId === session.sessionId
+    );
+    if (ws) {
+      ws.close();
+      console.log(`Closed WebSocket for session ${session.sessionId}`);
+    } else {
+      console.log(`WebSocket for session ${session.sessionId} not found`);
+    }
+  });
+
+  // Update all sessions in MongoDB
+  await WebSocketSession.updateMany({ userId }, { connected: false });
+};
+
+
 module.exports = {
   initializeWebSocketServer,
   sendMessageToUserSessions,
   broadcastMessage,
   sendMessageToSession,
+  closeSession,
+  closeUserSessions,
 };
