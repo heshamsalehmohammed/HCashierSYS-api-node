@@ -85,4 +85,15 @@ router.delete('/user/:userId/sessions', [auth, role('master')], async (req, res)
   }
 });
 
+router.post('/broadcast', [auth, role('master')], async (req, res) => {
+  const { message } = req.body;
+  try {
+    await webSocketService.broadcastMessage(message);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error sending message to session:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
