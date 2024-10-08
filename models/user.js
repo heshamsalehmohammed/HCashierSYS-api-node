@@ -2,6 +2,7 @@ const config = require("config");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
 const mongoose = require("mongoose");
+const timestampsAndUserTracking = require("../utils/timestampsAndUserTracking");
 
 
 const userSchema = new mongoose.Schema({
@@ -30,6 +31,11 @@ const userSchema = new mongoose.Schema({
     enum: ['master', 'admin', 'user'], // Define the valid roles
     default: 'user', // Default to 'user' if not specified
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  ...timestampsAndUserTracking,
 });
 
 

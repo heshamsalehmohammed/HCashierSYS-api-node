@@ -9,7 +9,7 @@ const timestampsAndUserTrackingSchema = {
   },
   createdByUserId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
+    default: null,
   },
   updatedDate: {
     type: Date,

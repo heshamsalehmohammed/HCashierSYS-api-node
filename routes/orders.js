@@ -259,7 +259,7 @@ router.post("/", auth, async (req, res) => {
     // });
   } catch (error) {
     console.log("Error saving order:", error);
-    res.status(400).send(error.message);
+    res.status(500).send(error.message);
   }
 });
 

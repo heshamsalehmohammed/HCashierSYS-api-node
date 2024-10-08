@@ -21,10 +21,9 @@ const CustomerSchema = new mongoose.Schema({
     minlength: 5,
     maxlength: 5000,
   },
-  creationDate: {
-    type: Date,
-    required: true,
-    default: Date.now,
+  isDeleted: {
+    type: Boolean,
+    default: false,
   },
   ...timestampsAndUserTracking,
 });
