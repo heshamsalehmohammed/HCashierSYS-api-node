@@ -35,6 +35,15 @@ function validateCustomer(customer) {
     name: Joi.string().min(5).max(100).required(),
     phone: Joi.string().min(5).max(50).required(),
     address: Joi.string().min(5).max(5000).required(),
+    
+    createdByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    creationDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
+  
+    updatedByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    updatedDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
+  
+    deletedByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    deletionDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
   });
 
   return schema.validate(customer);

@@ -33,7 +33,7 @@ const OrderItemSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: true,
-  },
+  }, 
   price: {
     type: Number,
     required: true,
@@ -97,6 +97,16 @@ function validateOrder(order) {
       .required(),
     totalPrice: Joi.number().required(),
     orderStatusId: Joi.number().valid(0, 1, 2, 3, 4).required(), // Order status validation
+
+    
+    createdByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    creationDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
+  
+    updatedByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    updatedDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
+  
+    deletedByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    deletionDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
   });
 
   return schema.validate(order);

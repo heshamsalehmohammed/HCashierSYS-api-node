@@ -79,6 +79,25 @@ function validateStockItem(stockItem) {
         })
       )
       .optional(), // Customizations are optional
+
+    createdByUserId: Joi.alternatives()
+      .try(JoiObjectId(), Joi.allow(null))
+      .optional(),
+    creationDate: Joi.alternatives()
+      .try(Joi.date(), Joi.allow(null))
+      .optional(),
+
+    updatedByUserId: Joi.alternatives()
+      .try(JoiObjectId(), Joi.allow(null))
+      .optional(),
+    updatedDate: Joi.alternatives().try(Joi.date(), Joi.allow(null)).optional(),
+
+    deletedByUserId: Joi.alternatives()
+      .try(JoiObjectId(), Joi.allow(null))
+      .optional(),
+    deletionDate: Joi.alternatives()
+      .try(Joi.date(), Joi.allow(null))
+      .optional(),
   });
 
   return schema.validate(stockItem);

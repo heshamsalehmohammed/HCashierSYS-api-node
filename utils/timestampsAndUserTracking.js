@@ -1,5 +1,5 @@
+const Joi = require("joi");
 const mongoose = require("mongoose");
-const timestampsAndUserTracking = require("../utils/timestampsAndUserTracking");
 
 
 const timestampsAndUserTrackingSchema = {
@@ -28,5 +28,6 @@ const timestampsAndUserTrackingSchema = {
     default: null,
   },
 };
+
 
 module.exports = timestampsAndUserTrackingSchema;

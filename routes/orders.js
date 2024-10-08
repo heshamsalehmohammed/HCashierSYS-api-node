@@ -46,7 +46,8 @@ router.get("/itemsPreperations", auth, async (req, res) => {
 
     // Prepare the final result
     const result = stockItems.map((stockItem) => {
-      const totalOrderQuantity = itemQuantityMap.get(stockItem._id.toString()) || 0; // Quantity required by orders
+      const totalOrderQuantity =
+        itemQuantityMap.get(stockItem._id.toString()) || 0; // Quantity required by orders
       const stockAvailable = stockItem.amount || 0; // Available stock amount
       const requiredQuantity = totalOrderQuantity - stockAvailable; // Difference (can be negative if stock is sufficient)
 
@@ -93,7 +94,8 @@ router.get("/", auth, async (req, res) => {
           "-__v"
         );
         const orderStatus = OrderStatusDetails[order.orderStatusId];
-        const itemsWithDetails =/*  await populateOrderItems(order.items); */[];
+        const itemsWithDetails =
+          /*  await populateOrderItems(order.items); */ [];
         return {
           ...order._doc,
           customer,
@@ -248,7 +250,8 @@ router.post("/", auth, async (req, res) => {
       JSON.stringify({
         type: "action",
         message: "",
-        reduxActionToBeDispatched: 'statistics/increaseInitializedOrdersCountBy',
+        reduxActionToBeDispatched:
+          "statistics/increaseInitializedOrdersCountBy",
         reduxActionPayloadToBeSent: 1,
       })
     ).catch((error) => console.error("Broadcast error:", error));
@@ -271,33 +274,117 @@ router.put("/:id", auth, async (req, res) => {
 
   try {
     const oldOrder = await Order.findById(req.params.id).select("-__v");
+
+    // handle logic if status changed
     if (oldOrder.orderStatusId !== body.orderStatusId) {
       body.statusChangeDate = new Date();
 
-      // If order status changes to DELIVERED
-      if (body.orderStatusId == OrderStatusEnum.DELIVERED) {
+      if (body.orderStatusId == OrderStatusEnum.PROCESSING) {
+        // Add your logic for processing status
         // Iterate over each item in the order
         for (const item of oldOrder.items) {
           // Find the stock item in the database
           const stockItem = await StockItem.findById(item.stockItemId);
           if (!stockItem) {
-            return res.status(404).send(`StockItem with ID ${item.stockItemId} not found.`);
+            return res
+              .status(404)
+              .send(`StockItem with ID ${item.stockItemId} not found.`);
           }
 
           // Decrease the stock amount by the ordered amount
           if (stockItem.amount >= item.amount) {
             stockItem.amount -= item.amount; // Reduce the stock
           } else {
-            return res.status(400).send(
-              `Not enough stock for item ${stockItem.name}. Available: ${stockItem.amount}, Ordered: ${item.amount}`
-            );
+            return res.status(200).send({
+              error: true,
+              message: `Not enough stock for item ${stockItem.name}.Available: ${stockItem.amount}, Ordered: ${item.amount}`,
+            });
+          }
+          // Save the updated stock item
+          await stockItem.save();
+          if (stockItem.amount <= 5) {
+            broadcastMessage(
+              JSON.stringify({
+                type: "action",
+                message: "",
+                reduxActionToBeDispatched: "utilities/showToast",
+                reduxActionPayloadToBeSent: {
+                  message: `Stock Item ${stockItem.name} is about to be UNAVAILABLE, refill the stock as soon as possible`,
+                  severity: "warn",
+                  summary: "Low Stock Warning",
+                },
+              })
+            ).catch((error) => console.error("Broadcast error:", error));
+          }
+        }
+      } else if (body.orderStatusId == OrderStatusEnum.DELIVERED) {
+        // No logic to be added for now
+      } else if (body.orderStatusId == OrderStatusEnum.CANCELED) {
+        // code here
+        if (oldOrder.orderStatusId === OrderStatusEnum.INITIALIZED) {
+          broadcastMessage(
+            JSON.stringify({
+              type: "action",
+              message: "",
+              reduxActionToBeDispatched:
+                "statistics/increaseInitializedOrdersCountBy",
+              reduxActionPayloadToBeSent: -1,
+            })
+          ).catch((error) => console.error("Broadcast error:", error));
+        } else if (oldOrder.orderStatusId === OrderStatusEnum.PROCESSING) {
+          for (const item of oldOrder.items) {
+            // Find the stock item in the database
+            const stockItem = await StockItem.findById(item.stockItemId);
+            if (!stockItem) {
+              return res
+                .status(404)
+                .send(`StockItem with ID ${item.stockItemId} not found.`);
+            }
+
+            // Increase the stock amount by the ordered amount
+            stockItem.amount += item.amount;
+            // Save the updated stock item
+            await stockItem.save();
+          }
+        }
+      }
+    } else {
+      // handle logic if status not changed
+
+      // if the order is initialized
+      if (body.orderStatusId == OrderStatusEnum.INITIALIZED) {
+        // No logic to be added for now
+      } else if (body.orderStatusId == OrderStatusEnum.PROCESSING) {
+        // return items to stock
+        for (const item of oldOrder.items) {
+          // Find the stock item in the database
+          const stockItem = await StockItem.findById(item.stockItemId);
+          if (!stockItem) {
+            return res
+              .status(404)
+              .send(`StockItem with ID ${item.stockItemId} not found.`);
           }
 
+          // Increase the stock amount by the ordered amount
+          stockItem.amount += item.amount;
           // Save the updated stock item
           await stockItem.save();
         }
-      } else if (body.orderStatusId == OrderStatusEnum.PROCESSING) {
-        // Add your logic for processing status here if needed
+        // change the order status to INITIALIZED
+        body.orderStatusId = OrderStatusEnum.INITIALIZED;
+        broadcastMessage(
+          JSON.stringify({
+            type: "action",
+            message: "",
+            reduxActionToBeDispatched:
+              "statistics/increaseInitializedOrdersCountBy",
+            reduxActionPayloadToBeSent: 1,
+          })
+        ).catch((error) => console.error("Broadcast error:", error));
+      } else if (body.orderStatusId == OrderStatusEnum.DELIVERED) {
+        return res.status(400).send("Cannot Edit DELIVERED Orders.");
+      } else if (body.orderStatusId == OrderStatusEnum.CANCELED) {
+        return res.status(400).send("Cannot Edit CANCELED Orders.");
       }
     }
 
@@ -385,7 +472,7 @@ const populateOrderItems = async (items) => {
         return null; // Skip this item if an error occurs
       }
     })
-  ).then((populatedItems) => populatedItems.filter(item => item !== null)); // Filter out null items
+  ).then((populatedItems) => populatedItems.filter((item) => item !== null)); // Filter out null items
 };
 
 module.exports = router;

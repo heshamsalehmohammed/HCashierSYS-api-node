@@ -61,6 +61,15 @@ function validateUser(user) {
     email: Joi.string().min(5).max(255).required().email(),
     password: Joi.string().min(5).max(255).required(),
     role: Joi.string().valid('user', 'admin', 'master').required(),
+
+    createdByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    creationDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
+  
+    updatedByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    updatedDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
+  
+    deletedByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
+    deletionDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
   });
 
   return schema.validate(user);
