@@ -1,6 +1,7 @@
 const config = require("config");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
+const JoiObjectId = require("joi-objectid")(Joi);
 const mongoose = require("mongoose");
 const timestampsAndUserTracking = require("../utils/timestampsAndUserTracking");
 
