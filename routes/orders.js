@@ -317,6 +317,15 @@ router.put("/:id", auth, async (req, res) => {
             ).catch((error) => console.error("Broadcast error:", error));
           }
         }
+        broadcastMessage(
+          JSON.stringify({
+            type: "action",
+            message: "",
+            reduxActionToBeDispatched:
+              "statistics/increaseInitializedOrdersCountBy",
+            reduxActionPayloadToBeSent: -1,
+          })
+        ).catch((error) => console.error("Broadcast error:", error));
       } else if (body.orderStatusId == OrderStatusEnum.DELIVERED) {
         // No logic to be added for now
       } else if (body.orderStatusId == OrderStatusEnum.CANCELED) {
