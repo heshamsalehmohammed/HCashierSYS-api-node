@@ -182,7 +182,9 @@ router.get("/", auth, async (req, res) => {
     const totalRecords = filteredOrders.length;
 
     // Apply pagination
-    const paginatedOrders = filteredOrders.slice(
+    const paginatedOrders = filteredOrders.sort(function(a,b){
+      return new Date(b.date) - new Date(a.date);
+    }).slice(
       pageNumber * pageSize,
       Math.min((pageNumber + 1) * pageSize, filteredOrders.length)
     );
