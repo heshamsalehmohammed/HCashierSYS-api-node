@@ -11,6 +11,20 @@ const { applyFilter } = require("../utils/filters");
 const { broadcastMessage } = require("../services/webSocketService");
 const router = express.Router();
 
+
+const saveStockItem = async (stockItem)=>{
+    await stockItem.save();
+    broadcastMessage(
+      JSON.stringify({
+        type: "action",
+        message: "",
+        reduxActionToBeDispatched:
+          "fetchStockItemBackendAction",
+        reduxActionPayloadToBeSent: stockItem._id,
+      })
+    ).catch((error) => console.error("Broadcast error:", error));
+}
+
 router.get("/itemsPreperations", auth, async (req, res) => {
   try {
     // Fetch all orders with 'Initialized Status' (assuming orderStatusId === 1 means Initialized)
@@ -256,10 +270,14 @@ router.post("/", auth, async (req, res) => {
       })
     ).catch((error) => console.error("Broadcast error:", error));
 
-    // Alternatively, use setImmediate to schedule it
-    // setImmediate(() => {
-    //   broadcastMessage(...).catch((error) => console.error("Broadcast error:", error));
-    // });
+    broadcastMessage(
+      JSON.stringify({
+        type: "action",
+        message: "",
+        reduxActionToBeDispatched: "updateHomePage",
+        reduxActionPayloadToBeSent: undefined,
+      })
+    ).catch((error) => console.error("Broadcast error:", error));
   } catch (error) {
     console.log("Error saving order:", error);
     res.status(500).send(error.message);
@@ -281,27 +299,35 @@ router.put("/:id", auth, async (req, res) => {
 
       if (body.orderStatusId == OrderStatusEnum.PROCESSING) {
         // Add your logic for processing status
-        // Iterate over each item in the order
-        for (const item of oldOrder.items) {
-          // Find the stock item in the database
+        const sufficientItems = []
+        for(const item of oldOrder.items){
           const stockItem = await StockItem.findById(item.stockItemId);
           if (!stockItem) {
             return res
               .status(404)
               .send(`StockItem with ID ${item.stockItemId} not found.`);
           }
-
-          // Decrease the stock amount by the ordered amount
           if (stockItem.amount >= item.amount) {
-            stockItem.amount -= item.amount; // Reduce the stock
-          } else {
+            sufficientItems.push(stockItem);
+          }else{
             return res.status(200).send({
               error: true,
               message: `Not enough stock for item ${stockItem.name}.Available: ${stockItem.amount}, Ordered: ${item.amount}`,
             });
           }
+        }
+
+
+
+
+        // Iterate over each item in the order
+        for (const item of oldOrder.items) {
+          // Find the stock item in the database
+          const stockItem = sufficientItems.find(stItem => stItem._id.equals(item.stockItemId));
+          stockItem.amount -= item.amount; // Reduce the stock
+
           // Save the updated stock item
-          await stockItem.save();
+          await saveStockItem(stockItem);
           if (stockItem.amount <= 5) {
             broadcastMessage(
               JSON.stringify({
@@ -353,7 +379,7 @@ router.put("/:id", auth, async (req, res) => {
             // Increase the stock amount by the ordered amount
             stockItem.amount += item.amount;
             // Save the updated stock item
-            await stockItem.save();
+            await saveStockItem(stockItem);
           }
         }
       }
@@ -377,7 +403,7 @@ router.put("/:id", auth, async (req, res) => {
           // Increase the stock amount by the ordered amount
           stockItem.amount += item.amount;
           // Save the updated stock item
-          await stockItem.save();
+          await saveStockItem(stockItem);
         }
         // change the order status to INITIALIZED
         body.orderStatusId = OrderStatusEnum.INITIALIZED;
@@ -419,7 +445,14 @@ router.put("/:id", auth, async (req, res) => {
       orderStatus,
       items: itemsWithDetails,
     };
-
+    broadcastMessage(
+      JSON.stringify({
+        type: "action",
+        message: "",
+        reduxActionToBeDispatched: "updateHomePage",
+        reduxActionPayloadToBeSent: undefined,
+      })
+    ).catch((error) => console.error("Broadcast error:", error));
     res.send(orderViewModel);
   } catch (error) {
     res.status(500).send(error.message);

@@ -15,18 +15,6 @@ router.get("/", [auth /* , role("master") */], async (req, res) => {
     };
 
     const stockItems = await StockItem.find(query).select("-__v").sort("name");
-    /* await broadcastMessage(
-    JSON.stringify({
-      type: "action",
-      message: "",
-      reduxActionToBeDispatched: 'utilities/showToast',
-      reduxActionPayloadToBeSent: {
-        message: 'hello from stock !!!!!!!!!!!!!!!!!!',
-        severity: 'success',
-        summary: 'Success'
-      },
-    })
-  ); */
 
     res.send(stockItems);
   } catch (error) {
@@ -95,6 +83,14 @@ router.put("/:id", auth, async (req, res) => {
         .status(404)
         .send("The stock item with the given ID was not found.");
 
+    broadcastMessage(
+      JSON.stringify({
+        type: "action",
+        message: "",
+        reduxActionToBeDispatched: "fetchStockItemBackendAction",
+        reduxActionPayloadToBeSent: stockItem._id,
+      })
+    ).catch((error) => console.error("Broadcast error:", error));
     res.send(stockItem);
   } catch (error) {
     res.status(500).send(error.message);
