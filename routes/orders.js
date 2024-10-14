@@ -27,49 +27,135 @@ const saveStockItem = async (stockItem)=>{
 
 router.get("/itemsPreperations", auth, async (req, res) => {
   try {
-    // Fetch all orders with 'Initialized Status' (assuming orderStatusId === 1 means Initialized)
+    // Fetch all orders with 'Initialized Status' (assuming orderStatusId === 1)
     const initializedOrders = await Order.find({
       orderStatusId: OrderStatusEnum.INITIALIZED,
     }).select("items");
 
-    // Calculate required quantity for each stock item across all orders
-    const itemQuantityMap = new Map(); // To keep track of total quantity required per stock item
+    // Maps to keep track of required quantities and counts
+    const itemQuantityMap = new Map(); // stockItemId => total amount
+    const totalCountsMap = new Map(); // stockItemId => total count
+    const customizationCountsMap = new Map(); // stockItemId => Map<customizationOptionKey, count>
 
     initializedOrders.forEach((order) => {
       order.items.forEach((item) => {
-        const { stockItemId, amount } = item;
-        const stockItemIdStr = stockItemId.toString();
+        const stockItemIdStr = item.stockItemId.toString();
 
         // Add the amount for this stockItemId
-        if (itemQuantityMap.has(stockItemIdStr)) {
-          itemQuantityMap.set(
+        itemQuantityMap.set(
+          stockItemIdStr,
+          (itemQuantityMap.get(stockItemIdStr) || 0) + item.amount
+        );
+
+        // Process counts if item.count is set
+        if (item.count != null) {
+          totalCountsMap.set(
             stockItemIdStr,
-            itemQuantityMap.get(stockItemIdStr) + amount
+            (totalCountsMap.get(stockItemIdStr) || 0) + item.count
           );
-        } else {
-          itemQuantityMap.set(stockItemIdStr, amount);
+
+          // Process customizations
+          item.stockItemCustomizationsSelectedOptions.forEach(
+            (customizationOption) => {
+              const stockItemCustomizationIdStr =
+                customizationOption.stockItemCustomizationId.toString();
+              const stockItemCustomizationSelectedOptionIdStr =
+                customizationOption.stockItemCustomizationSelectedOptionId.toString();
+
+              const customizationOptionKey = `${stockItemCustomizationIdStr}_${stockItemCustomizationSelectedOptionIdStr}`;
+
+              if (!customizationCountsMap.has(stockItemIdStr)) {
+                customizationCountsMap.set(stockItemIdStr, new Map());
+              }
+
+              const stockItemCustomizationMap = customizationCountsMap.get(
+                stockItemIdStr
+              );
+
+              stockItemCustomizationMap.set(
+                customizationOptionKey,
+                (stockItemCustomizationMap.get(customizationOptionKey) || 0) +
+                  item.count
+              );
+            }
+          );
         }
       });
     });
 
-    // Fetch stock items from the StockItem collection based on the stockItemIds
-    const stockItemIds = Array.from(itemQuantityMap.keys());
+    // Get all stockItemIds involved
+    const stockItemIds = Array.from(
+      new Set([...itemQuantityMap.keys(), ...totalCountsMap.keys()])
+    );
+
+    // Fetch stock items with customizations
     const stockItems = await StockItem.find({
       _id: { $in: stockItemIds },
-    }).select("_id name amount");
+    }).select("_id name amount customizations");
 
     // Prepare the final result
     const result = stockItems.map((stockItem) => {
-      const totalOrderQuantity =
-        itemQuantityMap.get(stockItem._id.toString()) || 0; // Quantity required by orders
+      const stockItemIdStr = stockItem._id.toString();
+
+      const totalOrderQuantity = itemQuantityMap.get(stockItemIdStr) || 0; // Quantity required by orders
       const stockAvailable = stockItem.amount || 0; // Available stock amount
       const requiredQuantity = totalOrderQuantity - stockAvailable; // Difference (can be negative if stock is sufficient)
+
+      const totalCount = totalCountsMap.get(stockItemIdStr) || 0;
+
+      const stockItemCustomizationMap =
+        customizationCountsMap.get(stockItemIdStr) || new Map();
+
+      // Prepare customizationsOptionsCount in the order of stockItem.customizations
+      const customizationsOptionsCount = [];
+
+      stockItem.customizations.forEach((customization) => {
+        const stockItemCustomizationIdStr = customization._id.toString();
+        const customizationName = customization.name;
+
+        customization.options.forEach((option) => {
+          const stockItemCustomizationSelectedOptionIdStr =
+            option._id.toString();
+          const optionName = option.name;
+
+          const customizationOptionKey = `${stockItemCustomizationIdStr}_${stockItemCustomizationSelectedOptionIdStr}`;
+
+          const count =
+            stockItemCustomizationMap.get(customizationOptionKey) || 0;
+
+          customizationsOptionsCount.push({
+            stockItemCustomizationId: stockItemCustomizationIdStr,
+            stockItemCustomizationName: customizationName,
+            stockItemCustomizationSelectedOptionId:
+              stockItemCustomizationSelectedOptionIdStr,
+            stockItemCustomizationSelectedOptionName: optionName,
+            count,
+          });
+        });
+      });
+
+      // Sum of counts in customizationsOptionsCount
+      const sumOfCustomizationCounts = customizationsOptionsCount.reduce(
+        (sum, item) => sum + item.count,
+        0
+      );
+
+      // Ensure totalCount equals sumOfCustomizationCounts
+      if (totalCount !== sumOfCustomizationCounts) {
+        console.warn(
+          `Total count mismatch for stockItemId ${stockItemIdStr}: totalCount ${totalCount}, sumOfCustomizationCounts ${sumOfCustomizationCounts}`
+        );
+      }
 
       return {
         stockItemId: stockItem._id,
         stockItemName: stockItem.name,
         stockItemQuantity: stockAvailable,
         requiredQuantity: requiredQuantity > 0 ? requiredQuantity : 0, // Only show positive required quantities
+        stockItemCountDetails: {
+          totalCount,
+          customizationsOptionsCount,
+        },
       };
     });
 
