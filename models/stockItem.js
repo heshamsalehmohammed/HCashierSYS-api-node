@@ -47,6 +47,10 @@ const StockItemSchema = new mongoose.Schema({
     required: false,
     min: 0,
   },
+  canOrderByCount: {
+    type: Boolean,
+    default: false,
+  },
   customizations: {
     type: [CustomizationSchema],
     default: [],
@@ -65,6 +69,7 @@ function validateStockItem(stockItem) {
     name: Joi.string().min(1).max(100).required(),
     amount: Joi.number().min(0).optional(),
     price: Joi.number().min(0).optional(),
+    canOrderByCount: Joi.boolean().optional(),
     customizations: Joi.array()
       .items(
         Joi.object({

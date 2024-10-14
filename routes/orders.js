@@ -508,6 +508,7 @@ const populateOrderItems = async (items) => {
           stockItemPrice: item.stockItemPrice,
           stockItemCustomizationsSelectedOptions: stockItemCustomizations,
           amount: item.amount,
+          count: item.count,
           price: item.price,
         };
       } catch (error) {

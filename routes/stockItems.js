@@ -47,6 +47,7 @@ router.post("/", auth, async (req, res) => {
       name: req.body.name,
       amount: req.body.amount,
       price: req.body.price,
+      canOrderByCount: req.body.canOrderByCount,
       customizations: req.body.customizations || [], // Customizations are optional
       createdByUserId: req.user._id,
     });
@@ -71,6 +72,7 @@ router.put("/:id", auth, async (req, res) => {
         name: req.body.name,
         amount: req.body.amount,
         price: req.body.price,
+        canOrderByCount: req.body.canOrderByCount,
         customizations: req.body.customizations || [], // Customizations are optional
         updatedByUserId: req.user._id,
         updatedDate: new Date(),

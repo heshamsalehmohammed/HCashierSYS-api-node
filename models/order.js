@@ -34,6 +34,10 @@ const OrderItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
   }, 
+  count: {
+    type: Number,
+    required: false,
+  }, 
   price: {
     type: Number,
     required: true,
@@ -91,6 +95,7 @@ function validateOrder(order) {
             })
           ),
           amount: Joi.number().required(),
+          count: Joi.number().optional(),
           price: Joi.number().required(),
         })
       )
