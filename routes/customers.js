@@ -34,6 +34,8 @@ router.post("/", auth, async (req, res) => {
       name: req.body.name,
       address: req.body.address,
       phone: req.body.phone,
+      notes: req.body.notes,
+      tombstone: req.body.tombstone,
       createdByUserId: req.user._id,
     });
     customer = await customer.save();
@@ -55,6 +57,8 @@ router.put("/:id", auth, async (req, res) => {
         name: req.body.name,
         address: req.body.address,
         phone: req.body.phone,
+        notes: req.body.notes,
+        tombstone: req.body.tombstone,
         updatedByUserId: req.user._id,
         updatedDate: new Date(),
       },

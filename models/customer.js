@@ -22,6 +22,18 @@ const CustomerSchema = new mongoose.Schema({
     minlength: 5,
     maxlength: 5000,
   },
+  notes: {
+    type: String,
+    required: false,
+    minlength: 0,
+    maxlength: 5000,
+  },
+  tombstone: {
+    type: String,
+    required: false,
+    minlength: 0,
+    maxlength: 5000,
+  },
   isDeleted: {
     type: Boolean,
     default: false,
@@ -36,6 +48,8 @@ function validateCustomer(customer) {
     name: Joi.string().min(5).max(100).required(),
     phone: Joi.string().min(5).max(50).required(),
     address: Joi.string().min(5).max(5000).required(),
+    notes: Joi.string().min(0).max(5000).optional(),
+    tombstone: Joi.string().min(0).max(5000).optional(),
     
     createdByUserId: Joi.alternatives().try(JoiObjectId(),Joi.allow(null)).optional(),
     creationDate: Joi.alternatives().try(Joi.date(),Joi.allow(null)).optional(),
