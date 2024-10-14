@@ -9,6 +9,7 @@ const auth = require("../middleware/auth");
 const express = require("express");
 const { applyFilter } = require("../utils/filters");
 const { broadcastMessage } = require("../services/webSocketService");
+const { roundToNearestHalf } = require("../utils/helpers");
 const router = express.Router();
 
 
@@ -151,7 +152,7 @@ router.get("/itemsPreperations", auth, async (req, res) => {
         stockItemId: stockItem._id,
         stockItemName: stockItem.name,
         stockItemQuantity: stockAvailable,
-        requiredQuantity: requiredQuantity > 0 ? requiredQuantity : 0, // Only show positive required quantities
+        requiredQuantity: roundToNearestHalf(requiredQuantity > 0 ? requiredQuantity : 0), // Only show positive required quantities
         stockItemCountDetails: {
           totalCount,
           customizationsOptionsCount,
