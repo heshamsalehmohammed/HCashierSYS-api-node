@@ -27,7 +27,7 @@ router.post("/login", async (req, res) => {
     const token = user.generateAuthToken();
 
     // Send response back to client, including the user's role
-    res.send({
+    res.header("x-auth-token", token).send({
       token, // Return the generated token
       user: _.pick(user, ["_id", "name", "email", "role"]), // Return the user object including the role
     });
