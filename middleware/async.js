@@ -8,3 +8,6 @@ module.exports = function (handler) {
     }
   };  
 }
+
+// not used anymore
+// Using 'express-async-errors' in startup/logging.js to handle async errors globally
