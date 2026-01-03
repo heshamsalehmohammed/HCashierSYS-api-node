@@ -1,24 +1,42 @@
-const winston = require('winston');
-// require('winston-mongodb');
-require('express-async-errors');
+// startup/logging.js
+const winston = require("winston");
+require("express-async-errors");
 
-module.exports = function() {
-  winston.handleExceptions(
-    new winston.transports.Console({ colorize: true, prettyPrint: true, level: 'info' }),
-    new winston.transports.File({ filename: 'uncaughtExceptions.log' }));
-  
-  process.on('unhandledRejection', (ex) => {
-    throw ex;
-  });
-  
-  winston.add(winston.transports.Console, {
-    colorize: true, 
-    prettyPrint: true,
-    level: 'info'
-  });
-  winston.add(winston.transports.File, { filename: 'logfile.log' });
-  // winston.add(winston.transports.MongoDB, { 
-  //   db: 'mongodb://localhost/vidly',
-  //   level: 'info'
-  // });  
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: "logs/app.log",
+      level: "info",
+    }),
+  ],
+  exceptionHandlers: [
+    new winston.transports.File({
+      filename: "logs/exceptions.log",
+    }),
+  ],
+  rejectionHandlers: [
+    new winston.transports.File({
+      filename: "logs/rejections.log",
+    }),
+  ],
+});
+
+// Console logging only in development
+if (process.env.NODE_ENV !== "production") {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      ),
+    })
+  );
 }
+
+module.exports = logger;

@@ -1,14 +1,14 @@
-const winston = require('winston');
+// middleware/error.js
+const logger = require("../startup/logging");
 
-module.exports = function(err, req, res, next){
-  winston.error(err.message, err);
+module.exports = function (err, req, res, next) {
+  logger.error(err.message, {
+    stack: err.stack,
+    path: req.originalUrl,
+    method: req.method,
+  });
 
-  // error
-  // warn
-  // info
-  // verbose
-  // debug 
-  // silly
-
-  res.status(500).send('Something failed.');
-}
+  res.status(500).json({
+    message: "Something failed.",
+  });
+};
