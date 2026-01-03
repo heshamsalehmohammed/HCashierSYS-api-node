@@ -7,6 +7,8 @@ const config = require('config');
 const { v4: uuidv4 } = require('uuid');
 const WebSocketSession = require('../models/WebSocketSession');
 const util = require('util');
+const logger = require("../startup/logging");
+
 
 const verifyAsync = util.promisify(jwt.verify);
 
@@ -69,7 +71,7 @@ const initializeWebSocketServer = (server) => {
         wss.emit('connection', ws, req);
       });
     } catch (error) {
-      console.error('WebSocket upgrade error:', error);
+      logger.error("WebSocket upgrade error:", error);
       socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n');
       socket.destroy();
     }
@@ -80,7 +82,7 @@ const initializeWebSocketServer = (server) => {
     try {
       const sessionId = ws.sessionId;
       const userId = ws.userId;
-      console.log('WebSocket connection established for session:', sessionId);
+      logger.info(`WebSocket connection established for session: ${sessionId}`);
 
       // Mark session as connected in MongoDB
       await WebSocketSession.updateOne(
@@ -90,7 +92,7 @@ const initializeWebSocketServer = (server) => {
 
       // Handle messages from the client
       ws.on('message', async (message) => {
-        console.log(`Received message from session ${sessionId}: ${message}`);
+        logger.info(`Received message from session ${sessionId}: ${message}`);
         await WebSocketSession.updateOne(
           { sessionId },
           { $push: { messages: message } }
@@ -105,16 +107,16 @@ const initializeWebSocketServer = (server) => {
             { sessionId },
             { connected: false }
           );
-          console.log(`WebSocket connection closed for session: ${sessionId}`);
+          logger.info(`WebSocket connection closed for session: ${sessionId}`);
         } catch (err) {
-          console.error(
+          logger.error(
             `Failed to update session status for ${sessionId}:`,
             err
           );
         }
       });
     } catch (err) {
-      console.error('Error in WebSocket connection:', err);
+      logger.error('Error in WebSocket connection:', err);
       ws.close();
     }
   });
@@ -133,7 +135,7 @@ const sendMessageToUserSessions = async (userId, message) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(message); // Send the message to the specific WebSocket connection
     } else {
-      console.log(`WebSocket for session ${session.sessionId} is not open`);
+      logger.info(`WebSocket for session ${session.sessionId} is not open`);
     }
   });
 };
@@ -162,7 +164,7 @@ const sendMessageToSession = async (sessionId, message) => {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(message);
   } else {
-    console.log(`WebSocket for session ${sessionId} is not open`);
+    logger.info(`WebSocket for session ${sessionId} is not open`);
   }
 };
 
@@ -173,9 +175,9 @@ const closeSession = async (sessionId) => {
   );
   if (ws) {
     ws.close();
-    console.log(`Closed WebSocket for session ${sessionId}`);
+    logger.info(`Closed WebSocket for session ${sessionId}`);
   } else {
-    console.log(`WebSocket for session ${sessionId} not found`);
+    logger.info(`WebSocket for session ${sessionId} not found`);
   }
   // Update the session in MongoDB
   await WebSocketSession.updateOne({ sessionId }, { connected: false });
@@ -191,9 +193,9 @@ const closeUserSessions = async (userId) => {
     );
     if (ws) {
       ws.close();
-      console.log(`Closed WebSocket for session ${session.sessionId}`);
+      logger.info(`Closed WebSocket for session ${session.sessionId}`);
     } else {
-      console.log(`WebSocket for session ${session.sessionId} not found`);
+      logger.info(`WebSocket for session ${session.sessionId} not found`);
     }
   });
 

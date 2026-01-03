@@ -4,13 +4,11 @@ const { OrderStatusDetails } = require('../utils/orderStatusEnum');
 
 // Fetch all order statuses
 router.get('/', (req, res) => {
-  try {
+  
     // Convert OrderStatusDetails to an array of values
     const orderStatuses = Object.values(OrderStatusDetails);
     res.send(orderStatuses);
-  } catch (error) {
-    res.status(500).send("An error occurred while fetching order statuses.");
-  }
+
 });
 
 // Fetch an order status by ID

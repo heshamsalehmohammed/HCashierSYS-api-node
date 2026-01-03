@@ -11,7 +11,7 @@ module.exports = async function connectToDb() {
 
   try {
     await mongoose.connect(db);
-    logger.info("Connected to MongoDB");
+    logger.info("🚀 Connected to MongoDB");
   } catch (err) {
     logger.error("Failed to connect to MongoDB", err);
     process.exit(1); // ❗ Fail fast
